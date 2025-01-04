@@ -1,4 +1,4 @@
-# Automated Email Organizer
+# Automated Email Organizer!
 
 ## Project Overview
 
