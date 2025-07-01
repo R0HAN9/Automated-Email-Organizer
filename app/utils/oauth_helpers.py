@@ -1,49 +1,57 @@
+# oauth_helper.py
 import os
-import pickle
+import json
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from app.config import GMAIL_TOKEN_PATH, GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REDIRECT_URI
+from google.auth.transport.requests import Request
+from app.config import GMAIL_TOKEN_PATH, GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET
 
-# Define the required scope for Gmail read-only access.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 
 def get_oauth2_credentials():
-    """
-    Retrieves OAuth2 credentials for accessing the Gmail API.
-
-    If a valid token exists, it loads the credentials from the token file.
-    Otherwise, it initializes the OAuth2 flow to authenticate and authorize the user.
-    The resulting credentials are stored in a token file for future use.
-
-    Returns:
-        Credentials: An authorized Credentials object for the Gmail API.
-    """
+    """Get OAuth2 credentials for Gmail API"""
     creds = None
-
-    # Check if a token file exists.
-    # The token file stores authorized credentials for Gmail API access.
+    
+    # Load existing credentials
     if os.path.exists(GMAIL_TOKEN_PATH):
-        # Load credentials from the token file.
-        creds = Credentials.from_authorized_user_file(GMAIL_TOKEN_PATH, SCOPES)
-
-    # If no valid credentials are found, initiate the authentication flow.
+        try:
+            creds = Credentials.from_authorized_user_file(GMAIL_TOKEN_PATH, SCOPES)
+        except Exception as e:
+            print(f"Error loading credentials: {e}")
+    
+    # If credentials are invalid or missing, get new ones
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            # Refresh the token if it has expired and a refresh token is available.
-            creds.refresh(Request())
-        else:
-            # If no valid token is available, start a new authentication flow.
-            # This requires the client secrets file ('gmail_credentials.json').
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials/gmail_credentials.json', SCOPES
-            )
-            # Run the local server for user authentication and authorization.
-            creds = flow.run_local_server(port=0)
-
-        # Save the newly obtained credentials to the token file for future use.
-        with open(GMAIL_TOKEN_PATH, 'wb') as token:
-            pickle.dump(creds, token)
-
-    # Return the authorized credentials object.
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"Error refreshing credentials: {e}")
+                creds = None
+        
+        if not creds:
+            try:
+                # Create credentials dict for OAuth flow
+                client_config = {
+                    "installed": {
+                        "client_id": GMAIL_CLIENT_ID,
+                        "client_secret": GMAIL_CLIENT_SECRET,
+                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                        "token_uri": "https://oauth2.googleapis.com/token",
+                        "redirect_uris": ["http://localhost"]
+                    }
+                }
+                
+                flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+                creds = flow.run_local_server(port=0)
+                
+                # Save credentials
+                os.makedirs(os.path.dirname(GMAIL_TOKEN_PATH), exist_ok=True)
+                with open(GMAIL_TOKEN_PATH, 'w') as token:
+                    token.write(creds.to_json())
+                    
+            except Exception as e:
+                print(f"Error during OAuth flow: {e}")
+                return None
+    
     return creds
