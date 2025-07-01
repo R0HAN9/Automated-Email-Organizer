@@ -1,33 +1,35 @@
 # email_service.py
-
-# Importing the Email model for email structure and utility functions for fetching emails.
 from app.models.email_model import Email
-from app.utils.email_utils import get_gmail_emails, get_outlook_emails
+from app.utils.email_utils import get_gmail_emails
+from app.services.email_sorting_service import sort_emails
 
 
-# Async function to fetch and sort emails based on categories.
 async def fetch_sorted_emails():
-    # Fetch emails from Gmail asynchronously.
-    gmail_emails = await get_gmail_emails()
+    """Fetch and sort emails from Gmail"""
+    try:
+        # Fetch emails from Gmail
+        gmail_emails = await get_gmail_emails()
+        
+        # Convert to dictionaries for consistent processing
+        email_dicts = [email.to_dict() for email in gmail_emails]
+        
+        # Use the sorting service for consistent sorting logic
+        sorted_emails = sort_emails(email_dicts)
+        
+        return sorted_emails
+    except Exception as e:
+        print(f"Error fetching sorted emails: {e}")
+        return {
+            "high_priority": [],
+            "low_priority": [],
+            "work_emails": [],
+            "personal_emails": [],
+            "spam_emails": []
+        }
 
-    # Initialize a dictionary to store sorted emails by category.
-    sorted_emails = {
-        "work": [],      # Emails related to work.
-        "personal": [],  # Emails related to personal matters.
-        "social": [],    # Emails related to social updates.
-        "other": [],     # Emails that do not match the above categories.
-    }
 
-    # Loop through all fetched Gmail emails and categorize them based on their subject.
-    for email in gmail_emails:
-        if "work" in email.subject.lower():  # Check if the email subject contains "work".
-            sorted_emails["work"].append(email)
-        elif "personal" in email.subject.lower():  # Check if the email subject contains "personal".
-            sorted_emails["personal"].append(email)
-        elif "social" in email.subject.lower():  # Check if the email subject contains "social".
-            sorted_emails["social"].append(email)
-        else:  # If none of the above conditions match, classify as "other".
-            sorted_emails["other"].append(email)
+async def get_emails_from_gmail():
+    """Wrapper function for get_gmail_emails"""
+    return await get_gmail_emails()
 
-    # Return the dictionary containing emails sorted by category.
-    return sorted_emails
+
