@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,13 +7,23 @@
     <link rel="stylesheet" href="/static/css/styles.css" />
   </head>
   <body>
-    <h1>Email Organizer</h1>
+    <div class="container">
+      <header>
+        <h1>📧 Email Organizer</h1>
+        <p>Automatically sort and organize your emails</p>
+      </header>
 
-    <div id="emails-section">
-      <h2>Sorted Emails</h2>
-      <button onclick="fetchEmails()">Fetch and Sort Emails</button>
+      <div id="emails-section">
+        <div class="controls">
+          <button id="fetch-btn" onclick="fetchEmails()">
+            <span id="btn-text">Fetch and Sort Emails</span>
+            <div id="loading" class="spinner" style="display: none;"></div>
+          </button>
+        </div>
 
-      <div id="email-results"></div>
+        <div id="email-stats" style="display: none;"></div>
+        <div id="email-results"></div>
+      </div>
     </div>
 
     <script src="/static/js/emails.js"></script>
